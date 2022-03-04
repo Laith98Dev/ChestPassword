@@ -41,7 +41,6 @@ use pocketmine\event\Listener;
 
 use pocketmine\player\Player;
 use pocketmine\block\BlockLegacyIds;
-use pocketmine\block\Block;
 
 use pocketmine\block\tile\Chest;
 
@@ -67,15 +66,12 @@ class Main extends PluginBase implements Listener {
 	
 	/** @var string[] */
 	public $canBreakChest = [];
-
-	/** @var Config */
-	public $data;
 	
 	public function onEnable(): void{		
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 		
 		if(!is_file($this->getDataFolder() . "data.yml")){
-			$this->data = new Config($this->getDataFolder() . "data.yml", Config::YAML, ["all_chests" => []]);
+			(new Config($this->getDataFolder() . "data.yml", Config::YAML, ["all_chests" => []]));
 		}
 	}
 	
@@ -86,7 +82,8 @@ class Main extends PluginBase implements Listener {
 		if($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK || $block->getId() !== BlockLegacyIds::CHEST || !is_file($this->getDataFolder() . "data.yml"))
 			return;
 		
-		$all = $this->data->get("all_chests", []);
+		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+		$all = $data->get("all_chests", []);
 		
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		
@@ -174,7 +171,8 @@ class Main extends PluginBase implements Listener {
 		if($block->getId() !== BlockLegacyIds::CHEST)
 			return false;
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-		$all = $this->data->get("all_chests", []);
+		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+		$all = $data->get("all_chests", []);
 		foreach ($all as $p){
 			foreach ($p as $pos => $pp){
 				if($pos == $key){
@@ -210,7 +208,8 @@ class Main extends PluginBase implements Listener {
 		if($block->getId() !== BlockLegacyIds::CHEST)
 			return false;
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-		$all = $this->data->get("all_chests", []);
+		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+		$all = $data->get("all_chests", []);
 		foreach ($all as $p){
 			foreach ($p as $pos => $pp){
 				if($pos == $key){
@@ -254,7 +253,8 @@ class Main extends PluginBase implements Listener {
 		if($block->getId() !== BlockLegacyIds::CHEST)
 			return false;
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-		$all = $this->data->get("all_chests", []);
+		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+		$all = $data->get("all_chests", []);
 		foreach ($all as $p){
 			foreach ($p as $pos => $pp){
 				if($pos == $key){
@@ -361,10 +361,11 @@ class Main extends PluginBase implements Listener {
 			}
 			
 			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-			$all = $this->data->get("all_chests", []);
+			$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+			$all = $data->get("all_chests", []);
 			$all[$player->getName()][][$key] = $pass . "_" . $player->getName();
-			$this->data->set("all_chests", $all);
-			$this->data->save();
+			$data->set("all_chests", $all);
+			$data->save();
 			
 			$player->sendMessage("Ssuccessfully add password!");
 		});
@@ -422,10 +423,11 @@ class Main extends PluginBase implements Listener {
 			
 			$block = $this->quee[$player->getName()];
 			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-			$all = $this->data->get("all_chests", []);
+			$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+			$all = $data->get("all_chests", []);
 			$all[$player->getName()][][$key] = $newPass . "_" . $player->getName();
-			$this->data->set("all_chests", $all);
-			$this->data->save();
+			$data->set("all_chests", $all);
+			$data->save();
 			
 			$player->sendMessage("Ssuccessfully changed the password!");
 		});
@@ -446,7 +448,8 @@ class Main extends PluginBase implements Listener {
 				case 1:
 					$block = $this->quee[$player->getName()];
 					$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-					$all = $this->data->get("all_chests", []);
+					$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+					$all = $data->get("all_chests", []);
 					foreach ($all as $pp => $data_){
 						foreach ($data_ as $k => $po){
 							$passAndOwner = explode("_", $po);
@@ -472,8 +475,8 @@ class Main extends PluginBase implements Listener {
 						}
 					}
 					
-					$this->data->set("all_chests", $all);
-					$this->data->save();
+					$data->set("all_chests", $all);
+					$data->save();
 					
 					$player->sendMessage("Password has been deleted!");
 				break;
