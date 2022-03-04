@@ -41,6 +41,7 @@ use pocketmine\event\Listener;
 
 use pocketmine\player\Player;
 use pocketmine\block\BlockLegacyIds;
+use pocketmine\block\Block;
 
 use pocketmine\block\tile\Chest;
 
