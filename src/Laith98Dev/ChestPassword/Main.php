@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Laith98Dev\ChestPassword;
 
 /*  
@@ -65,7 +67,7 @@ class Main extends PluginBase implements Listener {
 	/** @var string[] */
 	public $canBreakChest = [];
 	
-	public function onEnable(){		
+	public function onEnable(): void{		
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 		
 		if(!is_file($this->getDataFolder() . "data.yml")){
@@ -92,7 +94,7 @@ class Main extends PluginBase implements Listener {
 					// if($passAndOwner[1] == $player->getName())
 						// break;
 					
-					$event->setCancelled();
+					$event->cancel();
 					$this->OpenPasswordForm($player, $block);
 				}
 			}
@@ -108,7 +110,7 @@ class Main extends PluginBase implements Listener {
 						if($passAndOwner[1] == $player->getName())
 							break;
 						
-						$event->setCancelled();
+						$event->cancel();
 						$this->OpenPasswordForm($player, $block);
 					}
 				}
@@ -139,7 +141,7 @@ class Main extends PluginBase implements Listener {
 			if(isset($this->placeSave[$player->getName()])){
 				$skey = $this->placeSave[$player->getName()];
 				if($skey == $key){
-					$event->setCancelled();
+					$event->cancel();
 					$this->OpenNewChestForm($player, $block);
 				}
 			}
@@ -147,11 +149,11 @@ class Main extends PluginBase implements Listener {
 		}
 		
 		if($this->isChestOwner($player, $block)){
-			$event->setCancelled();
+			$event->cancel();
 			$this->OpenEditForm($player, $block);
 		} else {
 			$player->sendMessage("you can't break this chest because have a password");
-			$event->setCancelled();
+			$event->cancel();
 		}
 	}
 	
@@ -306,7 +308,7 @@ class Main extends PluginBase implements Listener {
 		
 		$form->setTitle("ChestPassword");
 		$form->addInput("Password:");
-		$form->sendToPlayer($player);
+		$player->sendForm($form);
 	}
 	
 	public function OpenNewChestForm(Player $player, Block $block){
@@ -335,7 +337,7 @@ class Main extends PluginBase implements Listener {
 		$form->setContent("do you need set password to this chest?");
 		$form->setButton1("Yes");
 		$form->setButton2("No");
-		$form->sendToPlayer($player);
+		$player->sendForm($form);
 	}
 	
 	public function OpenSetPasswordForm(Player $player, Block $block){
@@ -370,7 +372,7 @@ class Main extends PluginBase implements Listener {
 		
 		$form->setTitle("New Chest");
 		$form->addInput("Password");
-		$form->sendToPlayer($player);
+		$player->sendForm($form);
 	}
 	
 	public function OpenEditForm(Player $player, Block $block){
@@ -395,7 +397,7 @@ class Main extends PluginBase implements Listener {
 		$form->setTitle("Edit Chest");
 		$form->addButton("Change Password");
 		$form->addButton("Delete Password");
-		$form->sendToPlayer($player);
+		$player->sendForm($form);
 	}
 	
 	public function OpenChangePasswordForm(Player $player, Block $block){
@@ -432,7 +434,7 @@ class Main extends PluginBase implements Listener {
 		
 		$form->setTitle("Change Password");
 		$form->addInput("New Password: ");
-		$form->sendToPlayer($player);
+		$player->sendForm($form);
 	}
 	
 	public function deletePasswordConfirm(Player $player, Block $block){
@@ -489,6 +491,6 @@ class Main extends PluginBase implements Listener {
 		$form->setContent("Are you sure to delete the password?");
 		$form->setButton1("Yes");
 		$form->setButton2("No");
-		$form->sendToPlayer($player);
+		$player->sendForm($form);
 	}
 }
