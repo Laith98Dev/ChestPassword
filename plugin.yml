@@ -2,4 +2,4 @@ name: ChestPassword
 main: Laith98Dev\ChestPassword\Main
 version: 1.0.0
 api: [4.0.0]
-author: Laith98Dev
+authors: [Laith98Dev, VaxPex]
