@@ -85,7 +85,7 @@ class Main extends PluginBase implements Listener {
 		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
 		$all = $data->get("all_chests", []);
 		
-		$key = (int)$block->getFloorX() . "_" . (int)$block->getFloorY() . "_" . (int)$block->getFloorZ();
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		
 		foreach ($all as $p){
 			foreach ($p as $pos => $pp){
@@ -100,9 +100,9 @@ class Main extends PluginBase implements Listener {
 			}
 		}
 		
-		$tile = $block->getLevel()->getTile($block);
+		$tile = $block->getPosition()->getWorld()->getTile($block);
 		if(($pair = $tile->getPair()) !== null){
-			$key = (int)$pair->getFloorX() . "_" . (int)$pair->getFloorY() . "_" . (int)$pair->getFloorZ();
+			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 			foreach ($all as $p){
 				foreach ($p as $pos => $pp){
 					if($pos == $key){
@@ -123,7 +123,7 @@ class Main extends PluginBase implements Listener {
 		$block = $event->getBlock();
 		
 		if($block->getId() == Block::CHEST){
-			$key = (int)$block->getFloorX() . "_" . (int)$block->getFloorY() . "_" . (int)$block->getFloorZ();
+			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 			
 			$this->placeSave[$player->getName()] = $key;
 		}
@@ -132,7 +132,7 @@ class Main extends PluginBase implements Listener {
 	public function onBreak(BlockBreakEvent $event): void{
 		$player = $event->getPlayer();
 		$block = $event->getBlock();
-		$key = (int)$block->getFloorX() . "_" . (int)$block->getFloorY() . "_" . (int)$block->getFloorZ();
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		
 		if($this->canBreak($block))
 			return;
@@ -158,19 +158,19 @@ class Main extends PluginBase implements Listener {
 	}
 	
 	public function canBreak($block){
-		$key = (int)$block->getFloorX() . "_" . (int)$block->getFloorY() . "_" . (int)$block->getFloorZ();
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		return isset($this->canBreakChest[$key]) && $this->canBreakChest[$key] == true;
 	}
 	
 	public function setCanBreak($block, bool $val = true){
-		$key = (int)$block->getFloorX() . "_" . (int)$block->getFloorY() . "_" . (int)$block->getFloorZ();
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		$this->canBreakChest[$key] = $val;
 	}
 	
 	public function checkChest(Block $block): bool{
 		if($block->getId() !== Block::CHEST)
 			return false;
-		$key = (int)$block->getFloorX() . "_" . (int)$block->getFloorY() . "_" . (int)$block->getFloorZ();
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
 		$all = $data->get("all_chests", []);
 		foreach ($all as $p){
@@ -181,9 +181,9 @@ class Main extends PluginBase implements Listener {
 			}
 		}
 		
-		$tile = $block->getLevel()->getTile($block);
+		$tile = $block->getPosition()->getWorld()->getTile($block);
 		if(($pair = $tile->getPair()) !== null){
-			$key = (int)$pair->getFloorX() . "_" . (int)$pair->getFloorY() . "_" . (int)$pair->getFloorZ();
+			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 			foreach ($all as $p){
 				foreach ($p as $pos => $pp){
 					if($pos == $key){
@@ -200,14 +200,14 @@ class Main extends PluginBase implements Listener {
 		if($block->getId() !== Block::CHEST)
 			return false;
 		
-		$chestInv = $block->getLevel()->getTile($block)->getInventory();
+		$chestInv = $block->getPosition()->getWorld()->getTile($block)->getInventory();
 		$player->addWindow($chestInv);
 	}
 	
 	public function checkPassword(string $pass, Block $block): bool{
 		if($block->getId() !== Block::CHEST)
 			return false;
-		$key = (int)$block->getFloorX() . "_" . (int)$block->getFloorY() . "_" . (int)$block->getFloorZ();
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
 		$all = $data->get("all_chests", []);
 		foreach ($all as $p){
@@ -231,9 +231,9 @@ class Main extends PluginBase implements Listener {
 			}
 		}
 		
-		$tile = $block->getLevel()->getTile($block);
+		$tile = $block->getPosition()->getWorld()->getTile($block);
 		if(($pair = $tile->getPair()) !== null){
-			$key = (int)$pair->getFloorX() . "_" . (int)$pair->getFloorY() . "_" . (int)$pair->getFloorZ();
+			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 			foreach ($all as $p){
 				foreach ($p as $pos => $pp){
 					if($pos == $key){
@@ -252,7 +252,7 @@ class Main extends PluginBase implements Listener {
 	public function isChestOwner(Player $player, Block $block): bool{
 		if($block->getId() !== Block::CHEST)
 			return false;
-		$key = (int)$block->getFloorX() . "_" . (int)$block->getFloorY() . "_" . (int)$block->getFloorZ();
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
 		$all = $data->get("all_chests", []);
 		foreach ($all as $p){
@@ -266,9 +266,9 @@ class Main extends PluginBase implements Listener {
 			}
 		}
 		
-		$tile = $block->getLevel()->getTile($block);
+		$tile = $block->getPosition()->getWorld()->getTile($block);
 		if(($pair = $tile->getPair()) !== null){
-			$key = (int)$pair->getFloorX() . "_" . (int)$pair->getFloorY() . "_" . (int)$pair->getFloorZ();
+			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 			foreach ($all as $p){
 				foreach ($p as $pos => $pp){
 					if($pos == $key){
@@ -326,9 +326,9 @@ class Main extends PluginBase implements Listener {
 				
 				case 2:
 					$block = $this->quee[$player->getName()];
-					$level = $block->getLevel();
+					$world = $block->getPosition()->getWorld();
 					$this->setCanBreak($block, true);
-					$level->useBreakOn($block);
+					$world->useBreakOn($block);
 				break;
 			}
 		});
@@ -360,7 +360,7 @@ class Main extends PluginBase implements Listener {
 				return false;
 			}
 			
-			$key = (int)$block->getFloorX() . "_" . (int)$block->getFloorY() . "_" . (int)$block->getFloorZ();
+			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 			$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
 			$all = $data->get("all_chests", []);
 			$all[$player->getName()][][$key] = $pass . "_" . $player->getName();
@@ -422,7 +422,7 @@ class Main extends PluginBase implements Listener {
 			}
 			
 			$block = $this->quee[$player->getName()];
-			$key = (int)$block->getFloorX() . "_" . (int)$block->getFloorY() . "_" . (int)$block->getFloorZ();
+			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 			$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
 			$all = $data->get("all_chests", []);
 			$all[$player->getName()][][$key] = $newPass . "_" . $player->getName();
@@ -447,7 +447,7 @@ class Main extends PluginBase implements Listener {
 			switch ($result){
 				case 1:
 					$block = $this->quee[$player->getName()];
-					$key = (int)$block->getFloorX() . "_" . (int)$block->getFloorY() . "_" . (int)$block->getFloorZ();
+					$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 					$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
 					$all = $data->get("all_chests", []);
 					foreach ($all as $pp => $data_){
@@ -462,7 +462,7 @@ class Main extends PluginBase implements Listener {
 					}
 					
 					if(($pair = $tile->getPair()) !== null){
-						$key = (int)$pair->getFloorX() . "_" . (int)$pair->getFloorY() . "_" . (int)$pair->getFloorZ();
+						$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 						foreach ($all as $pp => $data_){
 							foreach ($data_ as $k => $po){
 								$passAndOwner = explode("_", $po);
