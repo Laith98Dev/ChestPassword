@@ -40,7 +40,7 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 
 use pocketmine\player\Player;
-use pocketmine\block\BlockLegacyId;
+use pocketmine\block\BlockLegacyIds;
 
 use pocketmine\block\tile\Chest;
 
@@ -79,7 +79,7 @@ class Main extends PluginBase implements Listener {
 		$player = $event->getPlayer();
 		$block = $event->getBlock();
 		
-		if($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK || $block->getId() !== BlockLegacyId::CHEST || !is_file($this->getDataFolder() . "data.yml"))
+		if($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK || $block->getId() !== BlockLegacyIds::CHEST || !is_file($this->getDataFolder() . "data.yml"))
 			return;
 		
 		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
@@ -122,7 +122,7 @@ class Main extends PluginBase implements Listener {
 		$player = $event->getPlayer();
 		$block = $event->getBlock();
 		
-		if($block->getId() == BlockLegacyId::CHEST){
+		if($block->getId() == BlockLegacyIds::CHEST){
 			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 			
 			$this->placeSave[$player->getName()] = $key;
@@ -168,7 +168,7 @@ class Main extends PluginBase implements Listener {
 	}
 	
 	public function checkChest(Block $block): bool{
-		if($block->getId() !== BlockLegacyId::CHEST)
+		if($block->getId() !== BlockLegacyIds::CHEST)
 			return false;
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
@@ -197,7 +197,7 @@ class Main extends PluginBase implements Listener {
 	}
 	
 	public function OpenChest(Player $player, Block $block){
-		if($block->getId() !== BlockLegacyId::CHEST)
+		if($block->getId() !== BlockLegacyIds::CHEST)
 			return false;
 		
 		$chestInv = $block->getPosition()->getWorld()->getTile($block)->getInventory();
@@ -205,7 +205,7 @@ class Main extends PluginBase implements Listener {
 	}
 	
 	public function checkPassword(string $pass, Block $block): bool{
-		if($block->getId() !== BlockLegacyId::CHEST)
+		if($block->getId() !== BlockLegacyIds::CHEST)
 			return false;
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
@@ -250,7 +250,7 @@ class Main extends PluginBase implements Listener {
 	}
 	
 	public function isChestOwner(Player $player, Block $block): bool{
-		if($block->getId() !== BlockLegacyId::CHEST)
+		if($block->getId() !== BlockLegacyIds::CHEST)
 			return false;
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
