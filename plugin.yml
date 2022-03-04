@@ -1,5 +1,5 @@
 name: ChestPassword
 main: Laith98Dev\ChestPassword\Main
 version: 1.0.0
-api: [3.0.0]
-authors: [Laith98Dev, VaxPex]
+api: [4.0.0]
+author: Laith98Dev
