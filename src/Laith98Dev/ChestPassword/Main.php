@@ -36,21 +36,15 @@ namespace Laith98Dev\ChestPassword;
  *     
  */
 
+use pocketmine\block\Chest;
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
-
 use pocketmine\player\Player;
 use pocketmine\block\BlockLegacyIds;
-
 use pocketmine\block\Block;
-
-use pocketmine\block\tile\Chest;
-
 use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat as TF;
-
 use pocketmine\event\player\PlayerInteractEvent;
-
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockBreakEvent;
 
@@ -58,441 +52,469 @@ use jojoe77777\FormAPI\SimpleForm;
 use jojoe77777\FormAPI\CustomForm;
 use jojoe77777\FormAPI\ModalForm;
 
-class Main extends PluginBase implements Listener {
-    
-    /** @var string[] */
-    public $placeSave = [];
-    
-    /** @var string[] */
-    public $quee = [];
-    
-    /** @var string[] */
-    public $canBreakChest = [];
-    
-    public function onEnable(): void{        
-        $this->getServer()->getPluginManager()->registerEvents($this, $this);
-        
-        if(!is_file($this->getDataFolder() . "data.yml")){
-            (new Config($this->getDataFolder() . "data.yml", Config::YAML, ["all_chests" => []]));
-        }
-    }
-    
-    public function onInteract(PlayerInteractEvent $event): void{
-        $player = $event->getPlayer();
-        $block = $event->getBlock();
-        
-        if($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK || $block->getId() !== BlockLegacyIds::CHEST || !is_file($this->getDataFolder() . "data.yml"))
-            return;
-        
-        $data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
-        $all = $data->get("all_chests", []);
-        
-        $key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-        
-        foreach ($all as $p){
-            foreach ($p as $pos => $pp){
-                if($pos == $key){
-                    $passAndOwner = explode("_", $pp);
-                    // if($passAndOwner[1] == $player->getName())
-                        // break;
-                    
-                    $event->cancel();
-                    $this->OpenPasswordForm($player, $block);
-                }
-            }
-        }
-        
-        $tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-        if(($pair = $tile->getPair()) !== null){
-            $key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
-            foreach ($all as $p){
-                foreach ($p as $pos => $pp){
-                    if($pos == $key){
-                        $passAndOwner = explode("_", $pp);
-                        if($passAndOwner[1] == $player->getName())
-                            break;
-                        
-                        $event->cancel();
-                        $this->OpenPasswordForm($player, $block);
-                    }
-                }
-            }
-        }
-    }
-    
-    public function onPlace(BlockPlaceEvent $event){
-        $player = $event->getPlayer();
-        $block = $event->getBlock();
-        
-        if($block->getId() == BlockLegacyIds::CHEST){
-            $key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-            
-            $this->placeSave[$player->getName()] = $key;
-        }
-    }
-    
-    public function onBreak(BlockBreakEvent $event): void{
-        $player = $event->getPlayer();
-        $block = $event->getBlock();
-        $key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-        
-        if($this->canBreak($block))
-            return;
-        
-        if(!$this->checkChest($block)){
-            if(isset($this->placeSave[$player->getName()])){
-                $skey = $this->placeSave[$player->getName()];
-                if($skey == $key){
-                    $event->cancel();
-                    $this->OpenNewChestForm($player, $block);
-                }
-            }
-            return;
-        }
-        
-        if($this->isChestOwner($player, $block)){
-            $event->cancel();
-            $this->OpenEditForm($player, $block);
-        } else {
-            $player->sendMessage("you can't break this chest because have a password");
-            $event->cancel();
-        }
-    }
-    
-    public function canBreak($block){
-        $key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-        return isset($this->canBreakChest[$key]) && $this->canBreakChest[$key] == true;
-    }
-    
-    public function setCanBreak($block, bool $val = true){
-        $key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-        $this->canBreakChest[$key] = $val;
-    }
-    
-    public function checkChest(Block $block): bool{
-        if($block->getId() !== BlockLegacyIds::CHEST)
-            return false;
-        $key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-        $data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
-        $all = $data->get("all_chests", []);
-        foreach ($all as $p){
-            foreach ($p as $pos => $pp){
-                if($pos == $key){
-                    return true;
-                }
-            }
-        }
-        
-        $tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-        if(($pair = $tile->getPair()) !== null){
-            $key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
-            foreach ($all as $p){
-                foreach ($p as $pos => $pp){
-                    if($pos == $key){
-                        return true;
-                    }
-                }
-            }
-        }
-        
-        return false;
-    }
-    
-    public function OpenChest(Player $player, Block $block){
-        if($block->getId() !== BlockLegacyIds::CHEST)
-            return false;
-        
-        $chestInv = $block->getPosition()->getWorld()->getTile($block->getPosition())->getInventory();
-        $player->addWindow($chestInv);
-    }
-    
-    public function checkPassword(string $pass, Block $block): bool{
-        if($block->getId() !== BlockLegacyIds::CHEST)
-            return false;
-        $key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-        $data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
-        $all = $data->get("all_chests", []);
-        foreach ($all as $p){
-            foreach ($p as $pos => $pp){
-                if($pos == $key){
-                    $passAndOwner = explode("_", $pp);
-                    if($passAndOwner[0] == $pass){
-                        return true;
-                    }
-                }
-            }
-        }
-        foreach ($all as $p){
-            foreach ($p as $pos => $pp){
-                if($pos == $key){
-                    $passAndOwner = explode("_", $pp);
-                    if($passAndOwner[0] == $pass){
-                        return true;
-                    }
-                }
-            }
-        }
-        
-        $tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-        if(($pair = $tile->getPair()) !== null){
-            $key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
-            foreach ($all as $p){
-                foreach ($p as $pos => $pp){
-                    if($pos == $key){
-                        $passAndOwner = explode("_", $pp);
-                        if($passAndOwner[0] == $pass){
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        
-        return false;
-    }
-    
-    public function isChestOwner(Player $player, Block $block): bool{
-        if($block->getId() !== BlockLegacyIds::CHEST)
-            return false;
-        $key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-        $data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
-        $all = $data->get("all_chests", []);
-        foreach ($all as $p){
-            foreach ($p as $pos => $pp){
-                if($pos == $key){
-                    $passAndOwner = explode("_", $pp);
-                    if($passAndOwner[1] == $player->getName()){
-                        return true;
-                    }
-                }
-            }
-        }
-        
-        $tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-        if(($pair = $tile->getPair()) !== null){
-            $key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
-            foreach ($all as $p){
-                foreach ($p as $pos => $pp){
-                    if($pos == $key){
-                        $passAndOwner = explode("_", $pp);
-                        if($passAndOwner[1] == $player->getName()){
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        
-        return false;
-    }
-    
-    public function OpenPasswordForm(Player $player, Block $block){
-        $this->quee[$player->getName()] = $block;
-        $form = new CustomForm(function (Player $player, array $data = null){
-            $result = $data;
-            if($result === null)
-                return false;
-            
-            $block = $this->quee[$player->getName()];
-            $pass = null;
-            if($data[0] !== null)
-                $pass = $data[0];
-            
-            if($pass == null)
-                return false;
-            
-            if($this->checkPassword($pass, $block)){
-                $this->OpenChest($player, $block);
-            } else {
-                $player->sendMessage(TF::RED . "Incorrect Password");
-            }
-        });
-        
-        $form->setTitle("ChestPassword");
-        $form->addInput("Password:");
-        $player->sendForm($form);
-    }
-    
-    public function OpenNewChestForm(Player $player, Block $block){
-        $this->quee[$player->getName()] = $block;
-        $form = new ModalForm(function (Player $player, $data = null){
-            $result = $data;
-            if($result === null)
-                return false;
-            
-            switch ($result){
-                case 1:
-                    $block = $this->quee[$player->getName()];
-                    $this->OpenSetPasswordForm($player, $block);
-                break;
-                
-                case 2:
-                    $block = $this->quee[$player->getName()];
-                    $world = $block->getPosition()->getWorld();
-                    $this->setCanBreak($block, true);
-                    $world->useBreakOn($block);
-                break;
-            }
-        });
-        
-        $form->setTitle("New Chest");
-        $form->setContent("do you need set password to this chest?");
-        $form->setButton1("Yes");
-        $form->setButton2("No");
-        $player->sendForm($form);
-    }
-    
-    public function OpenSetPasswordForm(Player $player, Block $block){
-        $this->quee[$player->getName()] = $block;
-        $form = new CustomForm(function (Player $player, array $data = null){
-            $result = $data;
-            if($result === null)
-                return false;
-            
-            $block = $this->quee[$player->getName()];
-            $pass = null;
-            if($data[0] !== null)
-                $pass = $data[0];
-            
-            if($pass == null)
-                return false;
-            
-            if(strpos("_", $pass) !== false){
-                $player->sendMessage(TF::RED . "You cant use '_' in password");
-                return false;
-            }
-            
-            $key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-            $data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
-            $all = $data->get("all_chests", []);
-            $all[$player->getName()][][$key] = $pass . "_" . $player->getName();
-            $data->set("all_chests", $all);
-            $data->save();
-            
-            $player->sendMessage("Ssuccessfully add password!");
-        });
-        
-        $form->setTitle("New Chest");
-        $form->addInput("Password");
-        $player->sendForm($form);
-    }
-    
-    public function OpenEditForm(Player $player, Block $block){
-        $this->quee[$player->getName()] = $block;
-        $form = new SimpleForm(function (Player $player, int $data = null){
-            $result = $data;
-            if($result === null)
-                return false;
-            
-            $block = $this->quee[$player->getName()];
-            switch ($result){
-                case 0:
-                    $this->OpenChangePasswordForm($player, $block);
-                break;
-                
-                case 1:
-                    $this->deletePasswordConfirm($player, $block);
-                break;
-            }
-        });
-        
-        $form->setTitle("Edit Chest");
-        $form->addButton("Change Password");
-        $form->addButton("Delete Password");
-        $player->sendForm($form);
-    }
-    
-    public function OpenChangePasswordForm(Player $player, Block $block){
-        if(!isset($this->quee[$player->getName()]))
-            $this->quee[$player->getName()] = $block;
-        
-        $form = new CustomForm(function (Player $player, array $data = null){
-            $result = $data;
-            if($result === null)
-                return false;
-            
-            $newPass = null;
-            if($data[0] !== null)
-                $newPass = $data[0];
-            
-            if($newPass == null)
-                return false;
-            
-            if(strpos("_", $newPass) !== false){
-                $player->sendMessage(TF::RED . "You cant use '_' in password");
-                return false;
-            }
-            
-            $block = $this->quee[$player->getName()];
-            $key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-            $data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
-            $all = $data->get("all_chests", []);
-            $all[$player->getName()][][$key] = $newPass . "_" . $player->getName();
-            $data->set("all_chests", $all);
-            $data->save();
-            
-            $player->sendMessage("Ssuccessfully changed the password!");
-        });
-        
-        $form->setTitle("Change Password");
-        $form->addInput("New Password: ");
-        $player->sendForm($form);
-    }
-    
-    public function deletePasswordConfirm(Player $player, Block $block){
-        $this->quee[$player->getName()] = $block;
-        $form = new ModalForm(function (Player $player, $data = null){
-            $result = $data;
-            if($result === null)
-                return false;
-            
-            switch ($result){
-                case 1:
-                    $block = $this->quee[$player->getName()];
-                    $key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-                    $data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
-                    $all = $data->get("all_chests", []);
-                    foreach ($all as $pp => $data_){
-                        foreach ($data_ as $k => $po){
-                            $passAndOwner = explode("_", $po);
-                            if($passAndOwner[1] == $player->getName()){
-                                if($k == $key){
-                                    unset($all[$pp][$key]);
-                                }
-                            }
-                        }
-                    }
-                    
-                    if(($pair = $tile->getPair()) !== null){
-                        $key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
-                        foreach ($all as $pp => $data_){
-                            foreach ($data_ as $k => $po){
-                                $passAndOwner = explode("_", $po);
-                                if($passAndOwner[1] == $player->getName()){
-                                    if($k == $key){
-                                        unset($all[$pp][$key]);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    $data->set("all_chests", $all);
-                    $data->save();
-                    
-                    $player->sendMessage("Password has been deleted!");
-                break;
-                
-                case 2:
-                    
-                break;
-            }
-        });
-        
-        $form->setTitle("New Chest");
-        $form->setContent("Are you sure to delete the password?");
-        $form->setButton1("Yes");
-        $form->setButton2("No");
-        $player->sendForm($form);
+class Main extends PluginBase implements Listener
+{
+
+	/** @var string[] */
+	public $placeSave = [];
+
+	/** @var Block[] */
+	public $quee = [];
+
+	/** @var string[] */
+	public $canBreakChest = [];
+
+	/** @var int[] */
+	public $formUsers = [];
+
+	public function onEnable(): void
+	{
+		$this->getServer()->getPluginManager()->registerEvents($this, $this);
+
+		if (!is_file($this->getDataFolder() . "data.yml")) {
+			(new Config($this->getDataFolder() . "data.yml", Config::YAML, ["all_chests" => []]));
+		}
+	}
+
+	public function onInteract(PlayerInteractEvent $event): void
+	{
+		$player = $event->getPlayer();
+		$block = $event->getBlock();
+
+		if ($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK || !$block instanceof Chest || !is_file($this->getDataFolder() . "data.yml")){
+			return;
+		}
+
+		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+		$all = $data->get("all_chests", []);
+
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
+		if(isset($all[$player->getName()])){
+			foreach ($all[$player->getName()] as $counter => $arrs){
+				foreach ($arrs as $arr => $password){
+					if($arr == $key){
+						$event->cancel();
+						$this->OpenPasswordForm($player, $block);
+					}
+				}
+			}
+		}
+
+		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
+		if (($pair = $tile->getPair()) !== null) {
+			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
+			foreach ($all as $p) {
+				foreach ($p as $pos => $pp) {
+					if ($pos == $key) {
+						$passAndOwner = explode("_", $pp);
+						if ($passAndOwner[1] == $player->getName())
+							break;
+
+						$event->cancel();
+						$this->OpenPasswordForm($player, $block);
+					}
+				}
+			}
+		}
+	}
+
+	public function onPlace(BlockPlaceEvent $event)
+	{
+		$player = $event->getPlayer();
+		$block = $event->getBlock();
+
+		if ($block->getId() == BlockLegacyIds::CHEST) {
+			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
+
+			$this->placeSave[$player->getName()] = $key;
+		}
+	}
+
+	public function onBreak(BlockBreakEvent $event): void
+	{
+		$player = $event->getPlayer();
+		$block = $event->getBlock();
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
+
+		if ($this->canBreak($block))
+			return;
+
+		if (!$this->checkChest($block)) {
+			if (isset($this->placeSave[$player->getName()])) {
+				$skey = $this->placeSave[$player->getName()];
+				if ($skey == $key) {
+					$event->cancel();
+					$this->OpenNewChestForm($player, $block);
+				}
+			}
+			return;
+		}
+
+		if ($this->isChestOwner($player, $block)) {
+			$event->cancel();
+			$this->OpenEditForm($player, $block);
+		} else {
+			$player->sendMessage("you can't break this chest because have a password");
+			$event->cancel();
+		}
+	}
+
+	public function canBreak($block)
+	{
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
+		return isset($this->canBreakChest[$key]) && $this->canBreakChest[$key] == true;
+	}
+
+	public function setCanBreak($block, bool $val = true)
+	{
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
+		$this->canBreakChest[$key] = $val;
+	}
+
+	public function checkChest(Block $block): bool
+	{
+		if (!$block instanceof Chest){
+			return false;
+		}
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
+		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+		$all = $data->get("all_chests", []);
+		foreach ($all as $p) {
+			foreach ($p as $pos => $pp) {
+				if ($pos == $key) {
+					return true;
+				}
+			}
+		}
+
+		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
+		if (($pair = $tile->getPair()) !== null) {
+			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
+			foreach ($all as $p) {
+				foreach ($p as $pos => $pp) {
+					if ($pos == $key) {
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	public function OpenChest(Player $player, Block $block)
+	{
+		if (!$block instanceof Chest){
+			return false;
+		}
+
+		$chestInv = $block->getPosition()->getWorld()->getTile($block->getPosition())->getInventory();
+		$player->setCurrentWindow($chestInv);
+	}
+
+	public function checkPassword(Player $player, string $pass, Block $block): bool
+	{
+		if (!$block instanceof Chest){
+			return false;
+		}
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
+		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+		$all = $data->get("all_chests", []);
+		if(isset($all[$player->getName()])){
+			foreach ($all[$player->getName()] as $counter => $arrs){
+				foreach ($arrs as $arr => $password){
+					if($arr == $key){
+						$passAndOwner = explode("_", $password);
+						if($passAndOwner[0] == $pass){
+							return true;
+						}
+					}
+				}
+			}
+		}
+
+		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
+		if (($pair = $tile->getPair()) !== null) {
+			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
+			foreach ($all as $p) {
+				foreach ($p as $pos => $pp) {
+					if ($pos == $key) {
+						$passAndOwner = explode("_", $pp);
+						if ($passAndOwner[0] == $pass) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	public function isChestOwner(Player $player, Block $block): bool
+	{
+		if (!$block instanceof Chest){
+			return false;
+		}
+		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
+		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+		$all = $data->get("all_chests", []);
+		foreach ($all as $p) {
+			foreach ($p as $pos => $pp) {
+				if ($pos == $key) {
+					$passAndOwner = explode("_", $pp);
+					if ($passAndOwner[1] == $player->getName()) {
+						return true;
+					}
+				}
+			}
+		}
+
+		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
+		if (($pair = $tile->getPair()) !== null) {
+			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
+			foreach ($all as $p) {
+				foreach ($p as $pos => $pp) {
+					if ($pos == $key) {
+						$passAndOwner = explode("_", $pp);
+						if ($passAndOwner[1] == $player->getName()) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	public function OpenPasswordForm(Player $player, Block $block)
+	{
+		$this->quee[$player->getName()] = $block;
+		$form = new CustomForm(function (Player $player, array $data = null) {
+			$result = $data;
+			if ($result === null)
+				return false;
+
+			$block = $this->quee[$player->getName()];
+			$pass = null;
+			if ($data[0] !== null)
+				$pass = $data[0];
+
+			if ($pass == null)
+				return false;
+
+			if ($this->checkPassword($player, $pass, $block)) {
+				$this->OpenChest($player, $block);
+			} else {
+				$player->sendMessage(TF::RED . "Incorrect Password");
+			}
+		});
+
+		$form->setTitle("ChestPassword");
+		$form->addInput("Password:");
+		$cooldown = 1;
+		if(!isset($this->formUsers[$player->getName()])){
+			$this->formUsers[$player->getName()] = time();
+			$player->sendForm($form);
+		}else{
+			if($cooldown > time() - $this->formUsers[$player->getName()]){
+				$time = time() - $this->formUsers[$player->getName()];
+			}else{
+				$this->formUsers[$player->getName()] = time();
+				$player->sendForm($form);
+			}
+		}
+		unset($time);
+	}
+
+	public function OpenNewChestForm(Player $player, Block $block)
+	{
+		$this->quee[$player->getName()] = $block;
+		$form = new ModalForm(function (Player $player, $data = null) {
+			$result = $data;
+			if ($result === null)
+				return false;
+
+			switch ($result) {
+				case 1:
+					$block = $this->quee[$player->getName()];
+					$this->OpenSetPasswordForm($player, $block);
+					break;
+
+				case 2:
+					$block = $this->quee[$player->getName()];
+					$world = $block->getPosition()->getWorld();
+					$this->setCanBreak($block, true);
+					$world->useBreakOn($block->getPosition());
+					break;
+			}
+		});
+
+		$form->setTitle("New Chest");
+		$form->setContent("do you need set password to this chest?");
+		$form->setButton1("Yes");
+		$form->setButton2("No");
+		$player->sendForm($form);
+	}
+
+	public function OpenSetPasswordForm(Player $player, Block $block)
+	{
+		$this->quee[$player->getName()] = $block;
+		$form = new CustomForm(function (Player $player, array $data = null) {
+			$result = $data;
+			if ($result === null)
+				return false;
+
+			$block = $this->quee[$player->getName()];
+			$pass = null;
+			if ($data[0] !== null)
+				$pass = $data[0];
+
+			if ($pass == null)
+				return false;
+
+			if (strpos("_", $pass) !== false) {
+				$player->sendMessage(TF::RED . "You cant use '_' in password");
+				return false;
+			}
+
+			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
+			$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+			$all = $data->get("all_chests", []);
+			$all[$player->getName()][][$key] = $pass . "_" . $player->getName();
+			$data->set("all_chests", $all);
+			$data->save();
+
+			$player->sendMessage("Ssuccessfully add password!");
+		});
+
+		$form->setTitle("New Chest");
+		$form->addInput("Password");
+		$player->sendForm($form);
+	}
+
+	public function OpenEditForm(Player $player, Block $block)
+	{
+		$this->quee[$player->getName()] = $block;
+		$form = new SimpleForm(function (Player $player, int $data = null) {
+			$result = $data;
+			if ($result === null)
+				return false;
+
+			$block = $this->quee[$player->getName()];
+			switch ($result) {
+				case 0:
+					$this->OpenChangePasswordForm($player, $block);
+					break;
+
+				case 1:
+					$this->deletePasswordConfirm($player, $block);
+					break;
+			}
+		});
+
+		$form->setTitle("Edit Chest");
+		$form->addButton("Change Password");
+		$form->addButton("Delete Password");
+		$player->sendForm($form);
+	}
+
+	public function OpenChangePasswordForm(Player $player, Block $block)
+	{
+		if (!isset($this->quee[$player->getName()]))
+			$this->quee[$player->getName()] = $block;
+
+		$form = new CustomForm(function (Player $player, array $data = null) {
+			$result = $data;
+			if ($result === null)
+				return false;
+
+			$newPass = null;
+			if ($data[0] !== null)
+				$newPass = $data[0];
+
+			if ($newPass == null)
+				return false;
+
+			if (strpos("_", $newPass) !== false) {
+				$player->sendMessage(TF::RED . "You cant use '_' in password");
+				return false;
+			}
+
+			$block = $this->quee[$player->getName()];
+			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
+			$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+			$all = $data->get("all_chests", []);
+			$all[$player->getName()][][$key] = $newPass . "_" . $player->getName();
+			$data->set("all_chests", $all);
+			$data->save();
+
+			$player->sendMessage("Ssuccessfully changed the password!");
+		});
+
+		$form->setTitle("Change Password");
+		$form->addInput("New Password: ");
+		$player->sendForm($form);
+	}
+
+	public function deletePasswordConfirm(Player $player, Block $block)
+	{
+		$this->quee[$player->getName()] = $block;
+		$form = new ModalForm(function (Player $player, $data = null) {
+			$result = $data;
+			if ($result === null)
+				return false;
+
+			switch ($result) {
+				case 1:
+					$block = $this->quee[$player->getName()];
+					$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
+					$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
+					$all = $data->get("all_chests", []);
+					foreach ($all as $pp => $data_) {
+						foreach ($data_ as $k => $po) {
+							$passAndOwner = explode("_", $po);
+							if ($passAndOwner[1] == $player->getName()) {
+								if ($k == $key) {
+									unset($all[$pp][$key]);
+								}
+							}
+						}
+					}
+
+					$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
+
+					if (($pair = $tile->getPair()) !== null) {
+						$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
+						foreach ($all as $pp => $data_) {
+							foreach ($data_ as $k => $po) {
+								$passAndOwner = explode("_", $po);
+								if ($passAndOwner[1] == $player->getName()) {
+									if ($k == $key) {
+										unset($all[$pp][$key]);
+									}
+								}
+							}
+						}
+					}
+
+					$data->set("all_chests", $all);
+					$data->save();
+
+					$player->sendMessage("Password has been deleted!");
+					break;
+
+				case 2:
+
+					break;
+			}
+		});
+
+		$form->setTitle("New Chest");
+		$form->setContent("Are you sure to delete the password?");
+		$form->setButton1("Yes");
+		$form->setButton2("No");
+		$player->sendForm($form);
 	}
 }
