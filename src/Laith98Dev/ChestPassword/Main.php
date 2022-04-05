@@ -61,7 +61,7 @@ class Main extends PluginBase implements Listener
 	/** @var Block[] */
 	public $quee = [];
 
-	/** @var string[] */
+	/** @var bool[] */
 	public $canBreakChest = [];
 
 	/** @var int[] */
@@ -101,17 +101,19 @@ class Main extends PluginBase implements Listener
 		}
 
 		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-		if (($pair = $tile->getPair()) !== null) {
-			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
-			foreach ($all as $p) {
-				foreach ($p as $pos => $pp) {
-					if ($pos == $key) {
-						$passAndOwner = explode("_", $pp);
-						if ($passAndOwner[1] == $player->getName())
-							break;
+		if($tile instanceof \pocketmine\block\tile\Chest){
+			if (($pair = $tile->getPair()) !== null) {
+				$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
+				foreach ($all as $p) {
+					foreach ($p as $pos => $pp) {
+						if ($pos == $key) {
+							$passAndOwner = explode("_", $pp);
+							if ($passAndOwner[1] == $player->getName())
+								break;
 
-						$event->cancel();
-						$this->OpenPasswordForm($player, $block);
+							$event->cancel();
+							$this->OpenPasswordForm($player, $block);
+						}
 					}
 				}
 			}
@@ -188,12 +190,14 @@ class Main extends PluginBase implements Listener
 		}
 
 		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-		if (($pair = $tile->getPair()) !== null) {
-			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
-			foreach ($all as $p) {
-				foreach ($p as $pos => $pp) {
-					if ($pos == $key) {
-						return true;
+		if($tile instanceof \pocketmine\block\tile\Chest){
+			if (($pair = $tile->getPair()) !== null) {
+				$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
+				foreach ($all as $p) {
+					foreach ($p as $pos => $pp) {
+						if ($pos == $key) {
+							return true;
+						}
 					}
 				}
 			}
@@ -208,8 +212,11 @@ class Main extends PluginBase implements Listener
 			return false;
 		}
 
-		$chestInv = $block->getPosition()->getWorld()->getTile($block->getPosition())->getInventory();
+		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
+		if(!$tile instanceof \pocketmine\block\tile\Chest)return false;
+		$chestInv = $tile->getInventory();
 		$player->setCurrentWindow($chestInv);
+		return true;
 	}
 
 	public function checkPassword(Player $player, string $pass, Block $block): bool
@@ -234,6 +241,7 @@ class Main extends PluginBase implements Listener
 		}
 
 		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
+		if(!$tile instanceof \pocketmine\block\tile\Chest)return false;
 		if (($pair = $tile->getPair()) !== null) {
 			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 			foreach ($all as $p) {
@@ -271,6 +279,7 @@ class Main extends PluginBase implements Listener
 		}
 
 		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
+		if(!$tile instanceof \pocketmine\block\tile\Chest)return false;
 		if (($pair = $tile->getPair()) !== null) {
 			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 			foreach ($all as $p) {
@@ -294,7 +303,7 @@ class Main extends PluginBase implements Listener
 		$form = new CustomForm(function (Player $player, array $data = null) {
 			$result = $data;
 			if ($result === null)
-				return false;
+				return;
 
 			$block = $this->quee[$player->getName()];
 			$pass = null;
@@ -302,7 +311,7 @@ class Main extends PluginBase implements Listener
 				$pass = $data[0];
 
 			if ($pass == null)
-				return false;
+				return;
 
 			if ($this->checkPassword($player, $pass, $block)) {
 				$this->OpenChest($player, $block);
@@ -334,7 +343,7 @@ class Main extends PluginBase implements Listener
 		$form = new ModalForm(function (Player $player, $data = null) {
 			$result = $data;
 			if ($result === null)
-				return false;
+				return;
 
 			switch ($result) {
 				case 1:
@@ -364,7 +373,7 @@ class Main extends PluginBase implements Listener
 		$form = new CustomForm(function (Player $player, array $data = null) {
 			$result = $data;
 			if ($result === null)
-				return false;
+				return;
 
 			$block = $this->quee[$player->getName()];
 			$pass = null;
@@ -372,11 +381,11 @@ class Main extends PluginBase implements Listener
 				$pass = $data[0];
 
 			if ($pass == null)
-				return false;
+				return;
 
 			if (strpos("_", $pass) !== false) {
 				$player->sendMessage(TF::RED . "You cant use '_' in password");
-				return false;
+				return;
 			}
 
 			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
@@ -400,7 +409,7 @@ class Main extends PluginBase implements Listener
 		$form = new SimpleForm(function (Player $player, int $data = null) {
 			$result = $data;
 			if ($result === null)
-				return false;
+				return;
 
 			$block = $this->quee[$player->getName()];
 			switch ($result) {
@@ -428,18 +437,18 @@ class Main extends PluginBase implements Listener
 		$form = new CustomForm(function (Player $player, array $data = null) {
 			$result = $data;
 			if ($result === null)
-				return false;
+				return;
 
 			$newPass = null;
 			if ($data[0] !== null)
 				$newPass = $data[0];
 
 			if ($newPass == null)
-				return false;
+				return;
 
 			if (strpos("_", $newPass) !== false) {
 				$player->sendMessage(TF::RED . "You cant use '_' in password");
-				return false;
+				return;
 			}
 
 			$block = $this->quee[$player->getName()];
@@ -464,7 +473,7 @@ class Main extends PluginBase implements Listener
 		$form = new ModalForm(function (Player $player, $data = null) {
 			$result = $data;
 			if ($result === null)
-				return false;
+				return;
 
 			switch ($result) {
 				case 1:
