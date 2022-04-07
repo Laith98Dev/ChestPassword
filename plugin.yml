@@ -3,6 +3,4 @@ main: Laith98Dev\ChestPassword\Main
 version: 1.0.0
 api: [4.0.0]
 authors: [Laith98Dev, VaxPex]
-
-depend:
-  - FormAPI
+description: ChestPassword

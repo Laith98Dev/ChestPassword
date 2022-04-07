@@ -48,9 +48,9 @@ use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\block\BlockBreakEvent;
 
-use jojoe77777\FormAPI\SimpleForm;
-use jojoe77777\FormAPI\CustomForm;
-use jojoe77777\FormAPI\ModalForm;
+use Laith98Dev\ChestPassword\libs\jojoe77777\FormAPI\SimpleForm;
+use Laith98Dev\ChestPassword\libs\jojoe77777\FormAPI\CustomForm;
+use Laith98Dev\ChestPassword\libs\jojoe77777\FormAPI\ModalForm;
 
 class Main extends PluginBase implements Listener
 {
@@ -81,7 +81,7 @@ class Main extends PluginBase implements Listener
 		$player = $event->getPlayer();
 		$block = $event->getBlock();
 
-		if ($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK || !$block instanceof Chest || !is_file($this->getDataFolder() . "data.yml")){
+		if ($event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK || !$block instanceof Chest || !is_file($this->getDataFolder() . "data.yml")) {
 			return;
 		}
 
@@ -89,10 +89,10 @@ class Main extends PluginBase implements Listener
 		$all = $data->get("all_chests", []);
 
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
-		if(isset($all[$player->getName()])){
-			foreach ($all[$player->getName()] as $counter => $arrs){
-				foreach ($arrs as $arr => $password){
-					if($arr == $key){
+		if (isset($all[$player->getName()])) {
+			foreach ($all[$player->getName()] as $counter => $arrs) {
+				foreach ($arrs as $arr => $password) {
+					if ($arr == $key) {
 						$event->cancel();
 						$this->OpenPasswordForm($player, $block);
 					}
@@ -101,7 +101,7 @@ class Main extends PluginBase implements Listener
 		}
 
 		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-		if($tile instanceof \pocketmine\block\tile\Chest){
+		if ($tile instanceof \pocketmine\block\tile\Chest) {
 			if (($pair = $tile->getPair()) !== null) {
 				$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 				foreach ($all as $p) {
@@ -175,7 +175,7 @@ class Main extends PluginBase implements Listener
 
 	public function checkChest(Block $block): bool
 	{
-		if (!$block instanceof Chest){
+		if (!$block instanceof Chest) {
 			return false;
 		}
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
@@ -190,7 +190,7 @@ class Main extends PluginBase implements Listener
 		}
 
 		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-		if($tile instanceof \pocketmine\block\tile\Chest){
+		if ($tile instanceof \pocketmine\block\tile\Chest) {
 			if (($pair = $tile->getPair()) !== null) {
 				$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 				foreach ($all as $p) {
@@ -208,12 +208,12 @@ class Main extends PluginBase implements Listener
 
 	public function OpenChest(Player $player, Block $block)
 	{
-		if (!$block instanceof Chest){
+		if (!$block instanceof Chest) {
 			return false;
 		}
 
 		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-		if(!$tile instanceof \pocketmine\block\tile\Chest)return false;
+		if (!$tile instanceof \pocketmine\block\tile\Chest) return false;
 		$chestInv = $tile->getInventory();
 		$player->setCurrentWindow($chestInv);
 		return true;
@@ -221,18 +221,18 @@ class Main extends PluginBase implements Listener
 
 	public function checkPassword(Player $player, string $pass, Block $block): bool
 	{
-		if (!$block instanceof Chest){
+		if (!$block instanceof Chest) {
 			return false;
 		}
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
 		$all = $data->get("all_chests", []);
-		if(isset($all[$player->getName()])){
-			foreach ($all[$player->getName()] as $counter => $arrs){
-				foreach ($arrs as $arr => $password){
-					if($arr == $key){
+		if (isset($all[$player->getName()])) {
+			foreach ($all[$player->getName()] as $counter => $arrs) {
+				foreach ($arrs as $arr => $password) {
+					if ($arr == $key) {
 						$passAndOwner = explode("_", $password);
-						if($passAndOwner[0] == $pass){
+						if ($passAndOwner[0] == $pass) {
 							return true;
 						}
 					}
@@ -241,7 +241,7 @@ class Main extends PluginBase implements Listener
 		}
 
 		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-		if(!$tile instanceof \pocketmine\block\tile\Chest)return false;
+		if (!$tile instanceof \pocketmine\block\tile\Chest) return false;
 		if (($pair = $tile->getPair()) !== null) {
 			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 			foreach ($all as $p) {
@@ -261,25 +261,27 @@ class Main extends PluginBase implements Listener
 
 	public function isChestOwner(Player $player, Block $block): bool
 	{
-		if (!$block instanceof Chest){
+		if (!$block instanceof Chest) {
 			return false;
 		}
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 		$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
 		$all = $data->get("all_chests", []);
-		foreach ($all as $p) {
-			foreach ($p as $pos => $pp) {
-				if ($pos == $key) {
-					$passAndOwner = explode("_", $pp);
-					if ($passAndOwner[1] == $player->getName()) {
-						return true;
+		if (isset($all[$player->getName()])) {
+			foreach ($all[$player->getName()] as $counter => $arrs) {
+				foreach ($arrs as $arr => $password) {
+					if ($arr == $key) {
+						$passAndOwner = explode("_", $password);
+						if ($passAndOwner[1] == $player->getName()) {
+							return true;
+						}
 					}
 				}
 			}
 		}
 
 		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-		if(!$tile instanceof \pocketmine\block\tile\Chest)return false;
+		if (!$tile instanceof \pocketmine\block\tile\Chest) return false;
 		if (($pair = $tile->getPair()) !== null) {
 			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 			foreach ($all as $p) {
@@ -323,13 +325,13 @@ class Main extends PluginBase implements Listener
 		$form->setTitle("ChestPassword");
 		$form->addInput("Password:");
 		$cooldown = 1;
-		if(!isset($this->formUsers[$player->getName()])){
+		if (!isset($this->formUsers[$player->getName()])) {
 			$this->formUsers[$player->getName()] = time();
 			$player->sendForm($form);
-		}else{
-			if($cooldown > time() - $this->formUsers[$player->getName()]){
+		} else {
+			if ($cooldown > time() - $this->formUsers[$player->getName()]) {
 				$time = time() - $this->formUsers[$player->getName()];
-			}else{
+			} else {
 				$this->formUsers[$player->getName()] = time();
 				$player->sendForm($form);
 			}
