@@ -495,7 +495,7 @@ class Main extends PluginBase implements Listener
 					}
 
 					$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-
+					if(!$tile instanceof \pocketmine\block\tile\Chest)return;
 					if (($pair = $tile->getPair()) !== null) {
 						$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
 						foreach ($all as $pp => $data_) {
