@@ -43,6 +43,7 @@ use pocketmine\player\Player;
 use pocketmine\block\BlockLegacyIds;
 use pocketmine\block\Block;
 use pocketmine\utils\Config;
+use pocketmine\utils\TextFormat;
 use pocketmine\utils\TextFormat as TF;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\block\BlockPlaceEvent;
@@ -93,30 +94,15 @@ class Main extends PluginBase implements Listener
 			foreach ($all[$player->getName()] as $counter => $arrs) {
 				foreach ($arrs as $arr => $password) {
 					if ($arr == $key) {
-						$event->cancel();
-						$this->OpenPasswordForm($player, $block);
+						$passAndOwner = explode("_", $password);
+						if ($passAndOwner[1] == $player->getName())
+							break;
 					}
 				}
 			}
-		}
-
-		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-		if ($tile instanceof \pocketmine\block\tile\Chest) {
-			if (($pair = $tile->getPair()) !== null) {
-				$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
-				foreach ($all as $p) {
-					foreach ($p as $pos => $pp) {
-						if ($pos == $key) {
-							$passAndOwner = explode("_", $pp);
-							if ($passAndOwner[1] == $player->getName())
-								break;
-
-							$event->cancel();
-							$this->OpenPasswordForm($player, $block);
-						}
-					}
-				}
-			}
+		} else {
+			$event->cancel();
+			$this->OpenPasswordForm($player, $block);
 		}
 	}
 
@@ -138,6 +124,10 @@ class Main extends PluginBase implements Listener
 		$block = $event->getBlock();
 		$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 
+		if(!$block instanceof Chest){
+			return;
+		}
+
 		if ($this->canBreak($block))
 			return;
 
@@ -149,14 +139,13 @@ class Main extends PluginBase implements Listener
 					$this->OpenNewChestForm($player, $block);
 				}
 			}
-			return;
 		}
 
 		if ($this->isChestOwner($player, $block)) {
 			$event->cancel();
 			$this->OpenEditForm($player, $block);
 		} else {
-			$player->sendMessage("you can't break this chest because have a password");
+			$player->sendMessage(TextFormat::RED . "You can't break this chest because it has a password");
 			$event->cancel();
 		}
 	}
@@ -232,24 +221,23 @@ class Main extends PluginBase implements Listener
 				foreach ($arrs as $arr => $password) {
 					if ($arr == $key) {
 						$passAndOwner = explode("_", $password);
-						if ($passAndOwner[0] == $pass) {
+						if ($passAndOwner[0] == $pass)
 							return true;
-						}
+						else
+							return false;
 					}
 				}
 			}
-		}
-
-		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-		if (!$tile instanceof \pocketmine\block\tile\Chest) return false;
-		if (($pair = $tile->getPair()) !== null) {
-			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
-			foreach ($all as $p) {
-				foreach ($p as $pos => $pp) {
-					if ($pos == $key) {
-						$passAndOwner = explode("_", $pp);
-						if ($passAndOwner[0] == $pass) {
-							return true;
+		} else {
+			foreach ($this->getServer()->getOnlinePlayers() as $player){
+				if(isset($all[$player->getName()])){
+					foreach ($all[$player->getName()] as $counter => $arrs){
+						foreach ($arrs as $arr => $password){
+							if($arr == $key){
+								$passAndOwner = explode("_", $password);
+								if ($passAndOwner[0] == $pass)
+									return true;
+							}
 						}
 					}
 				}
@@ -272,25 +260,10 @@ class Main extends PluginBase implements Listener
 				foreach ($arrs as $arr => $password) {
 					if ($arr == $key) {
 						$passAndOwner = explode("_", $password);
-						if ($passAndOwner[1] == $player->getName()) {
+						if ($passAndOwner[1] == $player->getName())
 							return true;
-						}
-					}
-				}
-			}
-		}
-
-		$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-		if (!$tile instanceof \pocketmine\block\tile\Chest) return false;
-		if (($pair = $tile->getPair()) !== null) {
-			$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
-			foreach ($all as $p) {
-				foreach ($p as $pos => $pp) {
-					if ($pos == $key) {
-						$passAndOwner = explode("_", $pp);
-						if ($passAndOwner[1] == $player->getName()) {
-							return true;
-						}
+						else
+							return false;
 					}
 				}
 			}
@@ -363,7 +336,7 @@ class Main extends PluginBase implements Listener
 		});
 
 		$form->setTitle("New Chest");
-		$form->setContent("do you need set password to this chest?");
+		$form->setContent("do you want to set password to this chest?");
 		$form->setButton1("Yes");
 		$form->setButton2("No");
 		$player->sendForm($form);
@@ -393,11 +366,12 @@ class Main extends PluginBase implements Listener
 			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 			$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
 			$all = $data->get("all_chests", []);
-			$all[$player->getName()][][$key] = $pass . "_" . $player->getName();
+			$all[$player->getName()][0][$key] = $pass . "_" . $player->getName();
 			$data->set("all_chests", $all);
 			$data->save();
 
-			$player->sendMessage("Ssuccessfully add password!");
+			$player->sendMessage("Successfully set password!");
+			unset($this->placeSave[$player->getName()]);
 		});
 
 		$form->setTitle("New Chest");
@@ -457,11 +431,12 @@ class Main extends PluginBase implements Listener
 			$key = (int)$block->getPosition()->getFloorX() . "_" . (int)$block->getPosition()->getFloorY() . "_" . (int)$block->getPosition()->getFloorZ();
 			$data = new Config($this->getDataFolder() . "data.yml", Config::YAML);
 			$all = $data->get("all_chests", []);
-			$all[$player->getName()][][$key] = $newPass . "_" . $player->getName();
+			unset($all[$player->getName()][0][$key]);
+			$all[$player->getName()][0][$key] = $newPass . "_" . $player->getName();
 			$data->set("all_chests", $all);
 			$data->save();
 
-			$player->sendMessage("Ssuccessfully changed the password!");
+			$player->sendMessage("Successfully changed the password!");
 		});
 
 		$form->setTitle("Change Password");
@@ -485,35 +460,22 @@ class Main extends PluginBase implements Listener
 					$all = $data->get("all_chests", []);
 					foreach ($all as $pp => $data_) {
 						foreach ($data_ as $k => $po) {
-							$passAndOwner = explode("_", $po);
-							if ($passAndOwner[1] == $player->getName()) {
-								if ($k == $key) {
-									unset($all[$pp][$key]);
-								}
-							}
-						}
-					}
-
-					$tile = $block->getPosition()->getWorld()->getTile($block->getPosition());
-					if(!$tile instanceof \pocketmine\block\tile\Chest)return;
-					if (($pair = $tile->getPair()) !== null) {
-						$key = (int)$pair->getPosition()->getFloorX() . "_" . (int)$pair->getPosition()->getFloorY() . "_" . (int)$pair->getPosition()->getFloorZ();
-						foreach ($all as $pp => $data_) {
-							foreach ($data_ as $k => $po) {
-								$passAndOwner = explode("_", $po);
+							foreach ($po as $pos => $password){
+								$passAndOwner = explode("_", $password);
 								if ($passAndOwner[1] == $player->getName()) {
-									if ($k == $key) {
-										unset($all[$pp][$key]);
+									if ($pos == $key) {
+										unset($all[$passAndOwner[1]][0][$key]);
+										unset($all[$passAndOwner[1][0]]);
+										unset($all[$passAndOwner[1]]);
+										$this->setCanBreak($block, true);
+										$data->set("all_chests", $all);
+										$data->save();
+										$player->sendMessage("Password has been deleted!");
 									}
 								}
 							}
 						}
 					}
-
-					$data->set("all_chests", $all);
-					$data->save();
-
-					$player->sendMessage("Password has been deleted!");
 					break;
 
 				case 2:
